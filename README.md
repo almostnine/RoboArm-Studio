@@ -10,6 +10,16 @@
 
 Perfect for students, makers, and robotics enthusiasts who want professional-grade control with a beautiful interface.
 
+## 🎯 Hardware Base
+
+**This software project is based on the hardware design of the robotic arm by [Emre Kalem](https://makerworld.com/en/models/1134).**
+
+The original hardware design has been modified for this project:
+- **Removed**: Breadboard
+- **Added**: Sensor Shield mounted directly on top of Arduino Uno R4
+
+This project uses **Arduino Uno R4 with Sensor Shield** as the hardware platform, providing a cleaner and more integrated setup compared to the original breadboard-based design.
+
 ## 📋 Features
 
 ✅ **Cross-platform**: Works on Mac, Windows and Linux  
@@ -226,15 +236,19 @@ robot_arm_control/
 
 ## 🤝 Credits
 
-### 3D Model & Hardware Design
-- **Robotic Arm 3D Model**: [Emre Kalem](https://makerworld.com/en/models/1134) (Eskisehir, Turkiye, 2025)
+### Hardware Design Base
+- **Original Robotic Arm Design**: [Emre Kalem](https://makerworld.com/en/models/1134) (Eskisehir, Turkiye, 2025)
   - Original 3D printable robotic arm design
   - STL files and assembly instructions available on [MakerWorld](https://makerworld.com/en/models/1134)
+  - **Hardware Modification**: This project uses a modified version of the hardware design:
+    - Removed breadboard
+    - Added Sensor Shield mounted on top of Arduino Uno R4
+    - This provides a cleaner, more integrated setup
 
 ### Software & Web Interface
 - **Code & Web Interface**: Developed for cross-platform compatibility
 - This software provides a modern web-based control system for the robotic arm
-- All code in this repository was written to interface with Emre Kalem's robotic arm design
+- All code in this repository was written to interface with the modified hardware setup based on Emre Kalem's robotic arm design
 
 ## 📝 License
 

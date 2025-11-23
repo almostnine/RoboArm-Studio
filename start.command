@@ -1,64 +1,64 @@
 #!/bin/bash
 
-# Robot Arm Control - Avvio Rapido per Mac
-# Fai doppio click per avviare!
+# Robot Arm Control - Quick Start for Mac
+# Double-click to start!
 
 echo "================================================"
 echo "   🤖 RoboArm Studio"
 echo "================================================"
 echo ""
 
-# Trova la directory dello script
+# Find the script directory
 cd "$(dirname "$0")"
 
-# Controlla se Python è installato
+# Check if Python is installed
 if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 non trovato!"
-    echo "Installa Python da: https://www.python.org/downloads/"
-    read -p "Premi INVIO per uscire..."
+    echo "❌ Python 3 not found!"
+    echo "Install Python from: https://www.python.org/downloads/"
+    read -p "Press ENTER to exit..."
     exit 1
 fi
 
-echo "✅ Python trovato: $(python3 --version)"
+echo "✅ Python found: $(python3 --version)"
 echo ""
 
-# Crea virtual environment se non esiste
+# Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
-    echo "📦 Creazione virtual environment..."
+    echo "📦 Creating virtual environment..."
     python3 -m venv venv
-    echo "✅ Virtual environment creato"
+    echo "✅ Virtual environment created"
 fi
 
-# Attiva il virtual environment
-echo "🔧 Attivazione virtual environment..."
+# Activate the virtual environment
+echo "🔧 Activating virtual environment..."
 source venv/bin/activate
 
-# Controlla e installa le dipendenze
-echo "📦 Controllo dipendenze..."
+# Check and install dependencies
+echo "📦 Checking dependencies..."
 if ! python -c "import flask" 2>/dev/null || ! python -c "import serial" 2>/dev/null; then
-    echo "⚙️  Installazione dipendenze..."
+    echo "⚙️  Installing dependencies..."
     pip install -q -r requirements.txt
-    echo "✅ Dipendenze installate"
+    echo "✅ Dependencies installed"
 else
-    echo "✅ Dipendenze OK"
+    echo "✅ Dependencies OK"
 fi
 
 echo ""
 
-# Controlla se Arduino è collegato
-echo "🔍 Ricerca Arduino..."
+# Check if Arduino is connected
+echo "🔍 Searching for Arduino..."
 if ls /dev/cu.usbmodem* 1> /dev/null 2>&1 || ls /dev/cu.usbserial* 1> /dev/null 2>&1; then
-    echo "✅ Arduino trovato!"
+    echo "✅ Arduino found!"
 else
-    echo "⚠️  Arduino non rilevato. Collegalo via USB prima di connetterti."
+    echo "⚠️  Arduino not detected. Connect it via USB before connecting."
 fi
 echo ""
 
-# Avvia il server
-echo "🚀 Avvio server..."
-echo "📱 Apri il browser su: http://localhost:5001"
+# Start the server
+echo "🚀 Starting server..."
+echo "📱 Open browser at: http://localhost:5001"
 echo ""
-echo "Premi Ctrl+C per fermare il server"
+echo "Press Ctrl+C to stop the server"
 echo "================================================"
 echo ""
 

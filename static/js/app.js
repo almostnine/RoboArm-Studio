@@ -252,7 +252,7 @@ async function loadSavedPositions() {
 // Save current slider position
 async function savePosition() {
     if (!isConnected) {
-        showNotification('Arduino non connesso!', 'error');
+        showNotification('Arduino not connected!', 'error');
         return;
     }
     
@@ -266,9 +266,9 @@ async function savePosition() {
     angles[2] = 180 - angles[1];
     
     // Ask for position name
-    const positionName = prompt('Inserisci un nome per questa posizione:');
+    const positionName = prompt('Enter a name for this position:');
     if (!positionName || !positionName.trim()) {
-        showNotification('Nome posizione richiesto', 'error');
+        showNotification('Position name required', 'error');
         return;
     }
     
@@ -289,19 +289,19 @@ async function savePosition() {
         if (data.success) {
             savedPositions = data.positions;
             updatePositionsUI();
-            showNotification(`✅ Posizione "${positionName}" salvata!`, 'success');
+            showNotification(`✅ Position "${positionName}" saved!`, 'success');
         } else {
-            showNotification(data.message || 'Errore nel salvataggio', 'error');
+            showNotification(data.message || 'Error saving', 'error');
         }
     } catch (error) {
-        showNotification('Errore nel salvataggio', 'error');
+        showNotification('Error saving', 'error');
     }
 }
 
 // Load a saved position
 async function loadPosition(positionName) {
     if (!isConnected) {
-        showNotification('Arduino non connesso!', 'error');
+        showNotification('Arduino not connected!', 'error');
         return;
     }
     
@@ -315,18 +315,18 @@ async function loadPosition(positionName) {
         if (data.success) {
             currentAngles = data.angles;
             updateAllDisplays();
-            showNotification(`Posizione "${positionName}" caricata`, 'success');
+            showNotification(`Position "${positionName}" loaded`, 'success');
         } else {
-            showNotification(data.message || 'Errore nel caricamento', 'error');
+            showNotification(data.message || 'Error loading', 'error');
         }
     } catch (error) {
-        showNotification('Errore nel caricamento', 'error');
+        showNotification('Error loading', 'error');
     }
 }
 
 // Delete a saved position
 async function deletePosition(positionName) {
-    if (!confirm(`Sei sicuro di voler eliminare la posizione "${positionName}"?`)) {
+    if (!confirm(`Are you sure you want to delete position "${positionName}"?`)) {
         return;
     }
     
@@ -340,19 +340,19 @@ async function deletePosition(positionName) {
         if (data.success) {
             savedPositions = data.positions;
             updatePositionsUI();
-            showNotification(`Posizione "${positionName}" eliminata`, 'success');
+            showNotification(`Position "${positionName}" deleted`, 'success');
         } else {
-            showNotification(data.message || 'Errore nell\'eliminazione', 'error');
+            showNotification(data.message || 'Error deleting', 'error');
         }
     } catch (error) {
-        showNotification('Errore nell\'eliminazione', 'error');
+        showNotification('Error deleting', 'error');
     }
 }
 
 // Align current position with sliders (when manually positioning)
 async function alignCurrentPosition() {
     if (!isConnected) {
-        showNotification('Arduino non connesso!', 'error');
+        showNotification('Arduino not connected!', 'error');
         return;
     }
     
@@ -379,12 +379,12 @@ async function alignCurrentPosition() {
         if (data.success) {
             currentAngles = data.angles;
             updateAllDisplays();
-            showNotification('✅ Posizione allineata con gli slider!', 'success');
+            showNotification('✅ Position aligned with sliders!', 'success');
         } else {
-            showNotification(data.message || 'Errore nell\'allineamento', 'error');
+            showNotification(data.message || 'Error aligning', 'error');
         }
     } catch (error) {
-        showNotification('Errore nell\'allineamento', 'error');
+        showNotification('Error aligning', 'error');
     }
 }
 
@@ -396,7 +396,7 @@ function updatePositionsUI() {
     const positionNames = Object.keys(savedPositions);
     
     if (positionNames.length === 0) {
-        positionsContainer.innerHTML = '<p style="color: #666; font-style: italic;">Nessuna posizione salvata. Usa gli slider per posizionare il braccio e clicca "Salva Posizione" per creare una nuova posizione.</p>';
+        positionsContainer.innerHTML = '<p style="color: #666; font-style: italic;">No saved positions. Use the sliders to position the arm and click "Save Position" to create a new position.</p>';
         return;
     }
     
@@ -414,10 +414,10 @@ function updatePositionsUI() {
                 </div>
                 <div>
                     <button class="btn btn-small" onclick="loadPosition('${name.replace(/'/g, "\\'")}')" style="margin-right: 5px; background: #2196F3; color: white;">
-                        ▶️ Carica
+                        ▶️ Load
                     </button>
                     <button class="btn btn-small" onclick="deletePosition('${name.replace(/'/g, "\\'")}')" style="background: #f44336; color: white;">
-                        🗑️ Elimina
+                        🗑️ Delete
                     </button>
                 </div>
             </div>

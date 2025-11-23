@@ -117,24 +117,24 @@
 
             <!-- Custom Positions panel -->
             <div class="preset-panel">
-                <h2>Posizioni Personalizzate</h2>
+                <h2>Custom Positions</h2>
                 <div style="margin-bottom: 15px;">
                     <button class="btn btn-primary" onclick="savePosition()" style="width: 100%; margin-bottom: 10px;">
-                        💾 Salva Posizione Corrente
+                        💾 Save Current Position
                     </button>
                     <button class="btn btn-secondary" onclick="alignCurrentPosition()" style="width: 100%;">
-                        🔄 Allinea Posizione (quando posizioni manualmente)
+                        🔄 Align Position (when positioning manually)
                     </button>
                 </div>
                 <div style="margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107; font-size: 0.9em; color: #856404;">
-                    <strong>ℹ️ Come usare:</strong><br>
-                    1. Posiziona il braccio usando gli slider (o manualmente)<br>
-                    2. Se posizionato manualmente, clicca "Allinea Posizione"<br>
-                    3. Clicca "Salva Posizione Corrente" per salvare<br>
-                    4. Usa i pulsanti qui sotto per caricare le posizioni salvate
+                    <strong>ℹ️ How to use:</strong><br>
+                    1. Position the arm using the sliders (or manually)<br>
+                    2. If positioned manually, click "Align Position"<br>
+                    3. Click "Save Current Position" to save<br>
+                    4. Use the buttons below to load saved positions
                 </div>
                 <div id="positionsContainer" style="margin-top: 15px;">
-                    <p style="color: #666; font-style: italic;">Caricamento posizioni...</p>
+                    <p style="color: #666; font-style: italic;">Loading positions...</p>
                 </div>
 
                 <div class="info-panel">
@@ -151,23 +151,23 @@
                 </div>
 
                 <div class="quick-actions">
-                    <h3>Azioni Rapide</h3>
+                    <h3>Quick Actions</h3>
                     <button class="btn btn-action" onclick="openGripper()">
-                        ✋ Apri Gripper (0°)
+                        ✋ Open Gripper (0°)
                     </button>
                     <button class="btn btn-action" onclick="closeGripper()">
-                        ✊ Chiudi Gripper (70°)
+                        ✊ Close Gripper (70°)
                     </button>
                     <button class="btn btn-action" onclick="resetGripper()">
                         🛑 Reset Gripper (35°)
                     </button>
                     <button class="btn btn-action" onclick="testGripperRange()" style="font-size: 0.9em;">
-                        🧪 Test Range Gripper
+                        🧪 Test Gripper Range
                     </button>
                     <div style="margin-top: 10px; padding: 10px; background: #e7f3ff; border-radius: 5px; font-size: 0.85em; color: #004085; border-left: 4px solid #2196F3;">
-                        <strong>ℹ️ Info Range:</strong> Servo 0-5 hanno range <strong>0-180°</strong>, Gripper ha range limitato <strong>0-70°</strong> per evitare stress meccanico.<br>
-                        <strong>Gripper:</strong> 0° = completamente aperto | 35° = metà | 70° = completamente chiuso<br>
-                        <strong>Accoppiamento:</strong> Arm A1 (Pin 3) e Arm A2 (Pin 4) ruotano in direzioni opposte
+                        <strong>ℹ️ Range Info:</strong> Servo 0-5 have range <strong>0-180°</strong>, Gripper has limited range <strong>0-70°</strong> to avoid mechanical stress.<br>
+                        <strong>Gripper:</strong> 0° = fully open | 35° = half | 70° = fully closed<br>
+                        <strong>Coupling:</strong> Arm A1 (Pin 3) and Arm A2 (Pin 4) rotate in opposite directions
                     </div>
                 </div>
             </div>
@@ -175,7 +175,7 @@
 
         <footer>
             <p><strong>RoboArm Studio</strong> | Robotic Arm Control | Compatible with Mac, Windows, Linux</p>
-            <p class="small">Hardware design by <a href="https://makerworld.com/en/models/1134" target="_blank" style="color: #4CAF50;">Emre Kalem</a> | Software by RoboArm Studio Team</p>
+            <p class="small">Hardware design by <a href="https://makerworld.com/en/models/1134" target="_blank" style="color: #4CAF50;">Emre Kalem</a> | Software by <a href="https://github.com/marcodisanto/robot_arm_web_control" target="_blank" style="color: #4CAF50;">Marco Di Santo</a></p>
         </footer>
     </div>
 
