@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoboArm Studio - Professional Robotic Arm Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1>🤖 RoboArm <span class="studio-text">Studio</span></h1>
+                    <p class="tagline">Professional Robotic Arm Control</p>
+                </div>
+                <div class="connection-status">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="connection-panel">
+            <button id="connectBtn" class="btn btn-primary">Connect Arduino</button>
+            <button id="disconnectBtn" class="btn btn-secondary" disabled>Disconnect</button>
+            <select id="portSelect" class="port-select">
+                <option value="">Auto-detect</option>
+            </select>
+            <button id="refreshPortsBtn" class="btn btn-small">🔄</button>
+        </div>
+
+        <div class="main-content">
+            <!-- Servo control panel -->
+            <div class="control-panel">
+                <h2>Servo Control</h2>
+                <small style="display: block; margin-bottom: 15px; color: #666; font-style: italic;">
+                    ℹ️ Note: Arm A1 (Pin 3) and Arm A2 (Pin 4) are coupled and rotate in opposite directions
+                </small>
+                
+                <div class="servo-control">
+                    <div class="servo-label">
+                        <span>🔄 Root (Base)</span>
+                        <span style="font-size: 0.75em; color: #666; margin-left: 8px;">Pin 2</span>
+                        <span class="angle-value" id="angle0">90°</span>
+                    </div>
+                    <input type="range" class="slider" id="servo0" min="0" max="180" value="90">
+                </div>
+
+                <div class="servo-control">
+                    <div class="servo-label">
+                        <span>💪 Arm A1 (Arm)</span>
+                        <span style="font-size: 0.75em; color: #666; margin-left: 8px;">Pin 3</span>
+                        <span class="angle-value" id="angle1">90°</span>
+                    </div>
+                    <input type="range" class="slider" id="servo1" min="0" max="180" value="90">
+                </div>
+
+                <div class="servo-control">
+                    <div class="servo-label">
+                        <span>💪 Arm A2 (Coupled Arm)</span>
+                        <span style="font-size: 0.75em; color: #666; margin-left: 8px;">Pin 4</span>
+                        <span class="angle-value" id="angle2">90°</span>
+                    </div>
+                    <input type="range" class="slider" id="servo2" min="0" max="180" value="90">
+                    <small style="color: #ff9800; display: block; margin-top: 5px; font-weight: 600;">
+                        ⚠️ Coupled with Arm A1 - rotates in opposite direction
+                    </small>
+                </div>
+
+                <div class="servo-control">
+                    <div class="servo-label">
+                        <span>💪 Arm B (Forearm)</span>
+                        <span style="font-size: 0.75em; color: #666; margin-left: 8px;">Pin 5</span>
+                        <span class="angle-value" id="angle3">90°</span>
+                    </div>
+                    <input type="range" class="slider" id="servo3" min="0" max="180" value="90">
+                </div>
+
+                <div class="servo-control">
+                    <div class="servo-label">
+                        <span>🤚 Wrist A (Wrist A)</span>
+                        <span style="font-size: 0.75em; color: #666; margin-left: 8px;">Pin 6</span>
+                        <span class="angle-value" id="angle4">90°</span>
+                    </div>
+                    <input type="range" class="slider" id="servo4" min="0" max="180" value="90">
+                </div>
+
+                <div class="servo-control">
+                    <div class="servo-label">
+                        <span>🤚 Wrist B (Wrist B)</span>
+                        <span style="font-size: 0.75em; color: #666; margin-left: 8px;">Pin 7</span>
+                        <span class="angle-value" id="angle5">90°</span>
+                    </div>
+                    <input type="range" class="slider" id="servo5" min="0" max="180" value="90">
+                </div>
+
+                <div class="servo-control">
+                    <div class="servo-label">
+                        <span>🦾 Gripper (Claw)</span>
+                        <span style="font-size: 0.75em; color: #666; margin-left: 8px;">Pin 8</span>
+                        <span class="angle-value" id="angle6">35°</span>
+                    </div>
+                    <div style="position: relative;">
+                        <input type="range" class="slider" id="servo6" min="0" max="70" value="35" step="5">
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.75em; color: #888;">
+                            <span>0°</span>
+                            <span style="font-weight: bold; color: #4CAF50;">Opening: 0-70°</span>
+                            <span>70°</span>
+                        </div>
+                    </div>
+                    <small style="color: #4CAF50; display: block; margin-top: 8px; font-weight: 600;">
+                        ✓ Range: 0° (fully open) → 70° (fully closed)
+                    </small>
+                </div>
+            </div>
+
+            <!-- Preset panel -->
+            <div class="preset-panel">
+                <h2>Predefined Positions</h2>
+                <div class="preset-buttons">
+                    <button class="btn btn-preset" onclick="loadPreset('home')">
+                        🏠 Home<br><small>Initial position</small>
+                    </button>
+                    <button class="btn btn-preset" onclick="loadPreset('rest')">
+                        😴 Rest<br><small>Rest position</small>
+                    </button>
+                    <button class="btn btn-preset" onclick="loadPreset('reach')">
+                        🎯 Reach<br><small>Extension</small>
+                    </button>
+                    <button class="btn btn-preset" onclick="loadPreset('grab')">
+                        ✊ Grab<br><small>Grab</small>
+                    </button>
+                </div>
+
+                <div class="info-panel">
+                    <h3>Current Angles</h3>
+                    <div class="angles-display" id="anglesDisplay">
+                        <span>Root: 90°</span>
+                        <span>Arm A1: 90°</span>
+                        <span>Arm A2: 90°</span>
+                        <span>Arm B: 90°</span>
+                        <span>Wrist A: 90°</span>
+                        <span>Wrist B: 90°</span>
+                        <span>Gripper: 35°</span>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <button class="btn btn-action" onclick="resetAllServo()">
+                        ↺ Reset All
+                    </button>
+                    <button class="btn btn-action" onclick="openGripper()">
+                        ✋ Open Gripper (0°)
+                    </button>
+                    <button class="btn btn-action" onclick="closeGripper()">
+                        ✊ Close Gripper (70°)
+                    </button>
+                    <button class="btn btn-action" onclick="resetGripper()">
+                        🛑 Reset Gripper (35°)
+                    </button>
+                    <button class="btn btn-action" onclick="testGripperRange()" style="font-size: 0.9em;">
+                        🧪 Test Gripper Range
+                    </button>
+                    <div style="margin-top: 10px; padding: 10px; background: #e7f3ff; border-radius: 5px; font-size: 0.85em; color: #004085; border-left: 4px solid #2196F3;">
+                        <strong>ℹ️ Range Info:</strong> Servo 0-5 have range <strong>0-180°</strong>, Gripper has limited range <strong>0-70°</strong> to avoid mechanical stress.<br>
+                        <strong>Gripper:</strong> 0° = fully open | 35° = half | 70° = fully closed<br>
+                        <strong>Coupling:</strong> Arm A1 (Pin 3) and Arm A2 (Pin 4) rotate in opposite directions
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>RoboArm Studio</strong> | Professional Robotic Arm Control | Compatible with Mac, Windows, Linux</p>
+            <p class="small">Hardware design by <a href="https://makerworld.com/en/models/1134" target="_blank" style="color: #4CAF50;">Emre Kalem</a> | Software by RoboArm Studio Team</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
