@@ -53,3 +53,6 @@ instance/
 .DS_Store
 Thumbs.db
 
+# Custom positions (user-specific)
+saved_positions.json
+

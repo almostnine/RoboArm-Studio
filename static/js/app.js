@@ -1,5 +1,5 @@
 // RoboArm Studio - JavaScript Control
-// Professional robotic arm control interface
+// Robotic arm control interface
 // Handles communication with server and user interface
 
 const API_BASE = '';
@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup event listeners
     setupEventListeners();
+    
+    // Load saved positions
+    loadSavedPositions();
     
     // Update status every 2 seconds
     setInterval(checkStatus, 2000);
@@ -229,14 +232,81 @@ async function moveServo(servoId, angle) {
     }
 }
 
-async function loadPreset(presetName) {
+// Load saved positions from server
+let savedPositions = {};
+
+async function loadSavedPositions() {
+    try {
+        const response = await fetch(`${API_BASE}/api/positions`);
+        const data = await response.json();
+        
+        if (data.success) {
+            savedPositions = data.positions || {};
+            updatePositionsUI();
+        }
+    } catch (error) {
+        console.error('Error loading positions:', error);
+    }
+}
+
+// Save current slider position
+async function savePosition() {
     if (!isConnected) {
-        showNotification('Arduino not connected!', 'error');
+        showNotification('Arduino non connesso!', 'error');
+        return;
+    }
+    
+    // Get current slider values
+    const angles = [];
+    sliders.forEach((slider) => {
+        angles.push(parseInt(slider.value));
+    });
+    
+    // Ensure servo 1 and 2 are coupled
+    angles[2] = 180 - angles[1];
+    
+    // Ask for position name
+    const positionName = prompt('Inserisci un nome per questa posizione:');
+    if (!positionName || !positionName.trim()) {
+        showNotification('Nome posizione richiesto', 'error');
         return;
     }
     
     try {
-        const response = await fetch(`${API_BASE}/api/preset/${presetName}`, {
+        const response = await fetch(`${API_BASE}/api/positions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: positionName.trim(),
+                angles: angles
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            savedPositions = data.positions;
+            updatePositionsUI();
+            showNotification(`✅ Posizione "${positionName}" salvata!`, 'success');
+        } else {
+            showNotification(data.message || 'Errore nel salvataggio', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore nel salvataggio', 'error');
+    }
+}
+
+// Load a saved position
+async function loadPosition(positionName) {
+    if (!isConnected) {
+        showNotification('Arduino non connesso!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/positions/${encodeURIComponent(positionName)}`, {
             method: 'POST'
         });
         
@@ -245,13 +315,116 @@ async function loadPreset(presetName) {
         if (data.success) {
             currentAngles = data.angles;
             updateAllDisplays();
-            showNotification(`Preset "${presetName}" loaded`, 'success');
+            showNotification(`Posizione "${positionName}" caricata`, 'success');
         } else {
-            showNotification(data.message || 'Error loading preset', 'error');
+            showNotification(data.message || 'Errore nel caricamento', 'error');
         }
     } catch (error) {
-        showNotification('Error loading preset', 'error');
+        showNotification('Errore nel caricamento', 'error');
     }
+}
+
+// Delete a saved position
+async function deletePosition(positionName) {
+    if (!confirm(`Sei sicuro di voler eliminare la posizione "${positionName}"?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/positions/${encodeURIComponent(positionName)}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            savedPositions = data.positions;
+            updatePositionsUI();
+            showNotification(`Posizione "${positionName}" eliminata`, 'success');
+        } else {
+            showNotification(data.message || 'Errore nell\'eliminazione', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore nell\'eliminazione', 'error');
+    }
+}
+
+// Align current position with sliders (when manually positioning)
+async function alignCurrentPosition() {
+    if (!isConnected) {
+        showNotification('Arduino non connesso!', 'error');
+        return;
+    }
+    
+    // Get values from sliders
+    const alignedAngles = [];
+    sliders.forEach((slider) => {
+        alignedAngles.push(parseInt(slider.value));
+    });
+    
+    // Ensure servo 1 and 2 are coupled
+    alignedAngles[2] = 180 - alignedAngles[1];
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/set_current`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ angles: alignedAngles })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentAngles = data.angles;
+            updateAllDisplays();
+            showNotification('✅ Posizione allineata con gli slider!', 'success');
+        } else {
+            showNotification(data.message || 'Errore nell\'allineamento', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore nell\'allineamento', 'error');
+    }
+}
+
+// Update positions UI
+function updatePositionsUI() {
+    const positionsContainer = document.getElementById('positionsContainer');
+    if (!positionsContainer) return;
+    
+    const positionNames = Object.keys(savedPositions);
+    
+    if (positionNames.length === 0) {
+        positionsContainer.innerHTML = '<p style="color: #666; font-style: italic;">Nessuna posizione salvata. Usa gli slider per posizionare il braccio e clicca "Salva Posizione" per creare una nuova posizione.</p>';
+        return;
+    }
+    
+    let html = '<div class="positions-list">';
+    positionNames.forEach(name => {
+        const position = savedPositions[name];
+        const angles = position.angles;
+        html += `
+            <div class="position-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px; margin: 5px 0; background: #f5f5f5; border-radius: 5px;">
+                <div style="flex: 1;">
+                    <strong>${name}</strong>
+                    <small style="display: block; color: #666; margin-top: 3px;">
+                        ${angles.map((a, i) => `${['Root', 'Arm A1', 'Arm A2', 'Arm B', 'Wrist A', 'Wrist B', 'Gripper'][i]}: ${a}°`).join(' | ')}
+                    </small>
+                </div>
+                <div>
+                    <button class="btn btn-small" onclick="loadPosition('${name.replace(/'/g, "\\'")}')" style="margin-right: 5px; background: #2196F3; color: white;">
+                        ▶️ Carica
+                    </button>
+                    <button class="btn btn-small" onclick="deletePosition('${name.replace(/'/g, "\\'")}')" style="background: #f44336; color: white;">
+                        🗑️ Elimina
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    positionsContainer.innerHTML = html;
 }
 
 function updateAngleDisplay(servoId, angle) {
@@ -318,10 +491,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Utility functions
-function resetAllServo() {
-    loadPreset('home');
-}
+// Utility functions - removed resetAllServo as it used hardcoded preset
 
 function openGripper() {
     if (!isConnected) {

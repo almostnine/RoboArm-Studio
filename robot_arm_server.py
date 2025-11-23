@@ -11,6 +11,7 @@ import serial
 import serial.tools.list_ports
 import threading
 import time
+import json
 
 app = Flask(__name__)
 
@@ -31,6 +32,30 @@ is_moving = False  # Flag to indicate if a movement is in progress
 # Smooth movement parameters
 MOVEMENT_STEP = 1  # Degrees per step (smaller = smoother)
 MOVEMENT_DELAY = 0.02  # Delay between steps in seconds (larger = slower, default 0.02 = 20ms)
+
+# Custom positions storage file
+POSITIONS_FILE = 'saved_positions.json'
+
+def load_saved_positions():
+    """Load saved positions from file"""
+    if os.path.exists(POSITIONS_FILE):
+        try:
+            with open(POSITIONS_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading positions: {e}")
+            return {}
+    return {}
+
+def save_positions(positions):
+    """Save positions to file"""
+    try:
+        with open(POSITIONS_FILE, 'w') as f:
+            json.dump(positions, f, indent=2)
+        return True
+    except Exception as e:
+        print(f"Error saving positions: {e}")
+        return False
 
 def find_arduino_port():
     """Automatically find Arduino port"""
@@ -352,36 +377,141 @@ def api_set_all():
     
     return jsonify({'success': False, 'message': 'Invalid angles'})
 
-@app.route('/api/preset/<preset_name>', methods=['POST'])
-def api_preset(preset_name):
-    """Load predefined positions with smooth movement"""
+@app.route('/api/positions', methods=['GET'])
+def api_get_positions():
+    """Get all saved positions"""
+    positions = load_saved_positions()
+    return jsonify({'success': True, 'positions': positions})
+
+@app.route('/api/positions', methods=['POST'])
+def api_save_position():
+    """Save a new position based on current slider values"""
     global current_angles
     
-    presets = {
-        'home': [90, 90, 90, 90, 90, 90, 35],  # Initial position (servo 0-5 at 90°, gripper at 35°)
-        'rest': [98, 36, 144, 0, 110, 10, 40],  # Rest position - arm folded compactly
-        'reach': [90, 120, 60, 60, 90, 90, 35],  # Extension position (servo 1-2 coupled, gripper half-open)
-        'grab': [90, 90, 90, 90, 90, 90, 70]  # Grab position (gripper closed at 70°)
-    }
+    if not is_connected:
+        return jsonify({'success': False, 'message': 'Arduino not connected'})
     
-    if preset_name in presets:
-        preset_angles = presets[preset_name].copy()
+    data = request.json
+    position_name = data.get('name', '').strip()
+    angles = data.get('angles')
+    
+    if not position_name:
+        return jsonify({'success': False, 'message': 'Nome posizione richiesto'})
+    
+    if angles and len(angles) == 7:
+        # Validate angles
+        angles_validated = []
+        for i, a in enumerate(angles):
+            if i == 6:  # Gripper
+                angles_validated.append(max(0, min(70, int(round(float(a))))))
+            else:  # Other servos
+                angles_validated.append(max(0, min(180, int(round(float(a))))))
         
-        # Start smooth movement in separate thread
-        def move_thread():
-            move_servo_smooth(preset_angles)
+        # Ensure servo 1 and servo 2 are coupled
+        angles_validated[2] = 180 - angles_validated[1]
         
-        movement_thread = threading.Thread(target=move_thread, daemon=True)
-        movement_thread.start()
+        # Load existing positions
+        positions = load_saved_positions()
+        
+        # Save new position
+        positions[position_name] = {
+            'angles': angles_validated,
+            'created': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        if save_positions(positions):
+            return jsonify({
+                'success': True,
+                'message': f'Posizione "{position_name}" salvata!',
+                'positions': positions
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Errore nel salvataggio'})
+    
+    return jsonify({'success': False, 'message': 'Angoli non validi'})
+
+@app.route('/api/positions/<position_name>', methods=['POST'])
+def api_load_position(position_name):
+    """Load a saved position"""
+    global current_angles
+    
+    if not is_connected:
+        return jsonify({'success': False, 'message': 'Arduino not connected'})
+    
+    positions = load_saved_positions()
+    
+    if position_name not in positions:
+        return jsonify({'success': False, 'message': 'Posizione non trovata'})
+    
+    preset_angles = positions[position_name]['angles'].copy()
+    
+    # Start smooth movement in separate thread
+    def move_thread():
+        move_servo_smooth(preset_angles)
+    
+    movement_thread = threading.Thread(target=move_thread, daemon=True)
+    movement_thread.start()
+    
+    return jsonify({
+        'success': True,
+        'angles': preset_angles,
+        'position': position_name,
+        'message': 'Movimento avviato'
+    })
+
+@app.route('/api/positions/<position_name>', methods=['DELETE'])
+def api_delete_position(position_name):
+    """Delete a saved position"""
+    positions = load_saved_positions()
+    
+    if position_name not in positions:
+        return jsonify({'success': False, 'message': 'Posizione non trovata'})
+    
+    del positions[position_name]
+    
+    if save_positions(positions):
+        return jsonify({
+            'success': True,
+            'message': f'Posizione "{position_name}" eliminata',
+            'positions': positions
+        })
+    else:
+        return jsonify({'success': False, 'message': 'Errore nell\'eliminazione'})
+
+@app.route('/api/set_current', methods=['POST'])
+def api_set_current():
+    """Set current position based on slider values (useful when manually aligning)"""
+    global current_angles
+    
+    if not is_connected:
+        return jsonify({'success': False, 'message': 'Arduino not connected'})
+    
+    data = request.json
+    angles = data.get('angles')
+    
+    if angles and len(angles) == 7:
+        # Validate angles
+        angles_validated = []
+        for i, a in enumerate(angles):
+            if i == 6:  # Gripper
+                angles_validated.append(max(0, min(70, int(round(float(a))))))
+            else:  # Other servos
+                angles_validated.append(max(0, min(180, int(round(float(a))))))
+        
+        # Update current position (without moving the arm)
+        with arduino_lock:
+            current_angles = angles_validated.copy()
+            # Ensure servo 1 and 2 are coupled
+            if len(current_angles) >= 3:
+                current_angles[2] = 180 - current_angles[1]
         
         return jsonify({
             'success': True,
-            'angles': preset_angles,
-            'preset': preset_name,
-            'message': 'Smooth movement started'
+            'angles': current_angles,
+            'message': 'Posizione corrente aggiornata'
         })
     
-    return jsonify({'success': False, 'message': 'Preset not found'})
+    return jsonify({'success': False, 'message': 'Angoli non validi'})
 
 if __name__ == '__main__':
     print("=" * 50)

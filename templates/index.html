@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoboArm Studio - Professional Robotic Arm Control</title>
+    <title>RoboArm Studio - Robotic Arm Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -12,7 +12,7 @@
             <div class="header-content">
                 <div class="logo-section">
                     <h1>🤖 RoboArm <span class="studio-text">Studio</span></h1>
-                    <p class="tagline">Professional Robotic Arm Control</p>
+                    <p class="tagline">Robotic Arm Control</p>
                 </div>
                 <div class="connection-status">
                     <div class="status-indicator" id="statusIndicator"></div>
@@ -115,22 +115,26 @@
                 </div>
             </div>
 
-            <!-- Preset panel -->
+            <!-- Custom Positions panel -->
             <div class="preset-panel">
-                <h2>Predefined Positions</h2>
-                <div class="preset-buttons">
-                    <button class="btn btn-preset" onclick="loadPreset('home')">
-                        🏠 Home<br><small>Initial position</small>
+                <h2>Posizioni Personalizzate</h2>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn btn-primary" onclick="savePosition()" style="width: 100%; margin-bottom: 10px;">
+                        💾 Salva Posizione Corrente
                     </button>
-                    <button class="btn btn-preset" onclick="loadPreset('rest')">
-                        😴 Rest<br><small>Rest position</small>
+                    <button class="btn btn-secondary" onclick="alignCurrentPosition()" style="width: 100%;">
+                        🔄 Allinea Posizione (quando posizioni manualmente)
                     </button>
-                    <button class="btn btn-preset" onclick="loadPreset('reach')">
-                        🎯 Reach<br><small>Extension</small>
-                    </button>
-                    <button class="btn btn-preset" onclick="loadPreset('grab')">
-                        ✊ Grab<br><small>Grab</small>
-                    </button>
+                </div>
+                <div style="margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107; font-size: 0.9em; color: #856404;">
+                    <strong>ℹ️ Come usare:</strong><br>
+                    1. Posiziona il braccio usando gli slider (o manualmente)<br>
+                    2. Se posizionato manualmente, clicca "Allinea Posizione"<br>
+                    3. Clicca "Salva Posizione Corrente" per salvare<br>
+                    4. Usa i pulsanti qui sotto per caricare le posizioni salvate
+                </div>
+                <div id="positionsContainer" style="margin-top: 15px;">
+                    <p style="color: #666; font-style: italic;">Caricamento posizioni...</p>
                 </div>
 
                 <div class="info-panel">
@@ -147,33 +151,30 @@
                 </div>
 
                 <div class="quick-actions">
-                    <h3>Quick Actions</h3>
-                    <button class="btn btn-action" onclick="resetAllServo()">
-                        ↺ Reset All
-                    </button>
+                    <h3>Azioni Rapide</h3>
                     <button class="btn btn-action" onclick="openGripper()">
-                        ✋ Open Gripper (0°)
+                        ✋ Apri Gripper (0°)
                     </button>
                     <button class="btn btn-action" onclick="closeGripper()">
-                        ✊ Close Gripper (70°)
+                        ✊ Chiudi Gripper (70°)
                     </button>
                     <button class="btn btn-action" onclick="resetGripper()">
                         🛑 Reset Gripper (35°)
                     </button>
                     <button class="btn btn-action" onclick="testGripperRange()" style="font-size: 0.9em;">
-                        🧪 Test Gripper Range
+                        🧪 Test Range Gripper
                     </button>
                     <div style="margin-top: 10px; padding: 10px; background: #e7f3ff; border-radius: 5px; font-size: 0.85em; color: #004085; border-left: 4px solid #2196F3;">
-                        <strong>ℹ️ Range Info:</strong> Servo 0-5 have range <strong>0-180°</strong>, Gripper has limited range <strong>0-70°</strong> to avoid mechanical stress.<br>
-                        <strong>Gripper:</strong> 0° = fully open | 35° = half | 70° = fully closed<br>
-                        <strong>Coupling:</strong> Arm A1 (Pin 3) and Arm A2 (Pin 4) rotate in opposite directions
+                        <strong>ℹ️ Info Range:</strong> Servo 0-5 hanno range <strong>0-180°</strong>, Gripper ha range limitato <strong>0-70°</strong> per evitare stress meccanico.<br>
+                        <strong>Gripper:</strong> 0° = completamente aperto | 35° = metà | 70° = completamente chiuso<br>
+                        <strong>Accoppiamento:</strong> Arm A1 (Pin 3) e Arm A2 (Pin 4) ruotano in direzioni opposte
                     </div>
                 </div>
             </div>
         </div>
 
         <footer>
-            <p><strong>RoboArm Studio</strong> | Professional Robotic Arm Control | Compatible with Mac, Windows, Linux</p>
+            <p><strong>RoboArm Studio</strong> | Robotic Arm Control | Compatible with Mac, Windows, Linux</p>
             <p class="small">Hardware design by <a href="https://makerworld.com/en/models/1134" target="_blank" style="color: #4CAF50;">Emre Kalem</a> | Software by RoboArm Studio Team</p>
         </footer>
     </div>
