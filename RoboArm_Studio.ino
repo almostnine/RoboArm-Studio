@@ -14,7 +14,13 @@ Servo servo6;
 Servo servo7;
 
 int angleValues[7]; // Array to store angle values - 7 servos
+int currentAngles[7]; // Current servo positions for smooth interpolation
+int targetAngles[7]; // Target servo positions
 int servoPins[] = { 2, 3, 4, 5, 6, 7, 8 }; // Servo pins - sequence from pin 2
+
+// Interpolation parameters
+const int INTERPOLATION_STEP = 1; // Degrees per step (smaller = smoother but slower)
+const int STEP_DELAY = 15; // Milliseconds between steps (adjust for speed vs smoothness)
 
 /* 
 Pin 2 = Root (Servo 0)
@@ -44,33 +50,103 @@ void setup()
   servo5.attach(servoPins[4]);
   servo6.attach(servoPins[5]);
   servo7.attach(servoPins[6]);
+  
+  // Initialize current and target positions to default (90° for most, 35° for gripper)
+  for (int i = 0; i < 7; i++)
+  {
+    if (i == 6) { // Gripper
+      currentAngles[i] = 35;
+      targetAngles[i] = 35;
+    } else {
+      currentAngles[i] = 90;
+      targetAngles[i] = 90;
+    }
+  }
+  
+  // Set initial positions
+  servo1.write(currentAngles[0]);
+  servo2.write(currentAngles[1]);
+  servo3.write(currentAngles[2]);
+  servo4.write(currentAngles[3]);
+  servo5.write(currentAngles[4]);
+  servo6.write(currentAngles[5]);
+  servo7.write(currentAngles[6]);
+  
   digitalWrite(13, LOW);
 }
 
 void loop()
 {
-  // Python server sends gradual commands for smooth movements
-  // Each command contains 7 integer values separated by spaces (one per servo)
-  // Smooth movements are handled server-side with gradual interpolation
-  if (Serial.available() > 0) // If data is available from serial port
+  // Check for new commands from serial port
+  if (Serial.available() > 0)
   {
-    // Read angle values
+    // Read target angle values
     for (int i = 0; i < 7; i++)
     {
-      angleValues[i] = Serial.parseInt(); // Read next int value
+      targetAngles[i] = Serial.parseInt(); // Read next int value
     }
-
-    // Move servos
-    // Note: Python code already sends servo2 (Pin 4) calculated as opposite of servo1 (Pin 3)
-    // So we use the received values directly
-    // Smooth movements are achieved by sending intermediate positions from Python server
-    servo1.write(angleValues[0]); // Root (Pin 2)
-    servo2.write(angleValues[1]); // Arm A1 (Pin 3)
-    servo3.write(angleValues[2]); // Arm A2 (Pin 4) - already calculated as opposite in Python
-    servo4.write(angleValues[3]); // Arm B (Pin 5)
-    servo5.write(angleValues[4]); // Wrist A (Pin 6)
-    servo6.write(angleValues[5]); // Wrist B (Pin 7)
-    servo7.write(angleValues[6]); // Gripper (Pin 8)
     
+    // DEBUG: Print received target angles
+    Serial.print("RX: ");
+    for (int i = 0; i < 7; i++)
+    {
+      Serial.print(targetAngles[i]);
+      if (i < 6) Serial.print(",");
+    }
+    Serial.println();
+  }
+  
+  // Smooth interpolation: gradually move current angles towards target angles
+  bool isMoving = false;
+  
+  for (int i = 0; i < 7; i++)
+  {
+    if (currentAngles[i] != targetAngles[i])
+    {
+      isMoving = true;
+      
+      // Calculate the difference
+      int diff = targetAngles[i] - currentAngles[i];
+      
+      // Move by INTERPOLATION_STEP degrees towards target
+      if (abs(diff) <= INTERPOLATION_STEP)
+      {
+        // Close enough, snap to target
+        currentAngles[i] = targetAngles[i];
+      }
+      else
+      {
+        // Move one step towards target
+        if (diff > 0)
+        {
+          currentAngles[i] += INTERPOLATION_STEP;
+        }
+        else
+        {
+          currentAngles[i] -= INTERPOLATION_STEP;
+        }
+      }
+    }
+  }
+  
+  // Write current positions to servos ONLY when moving
+  // This prevents jitter and unnecessary servo updates
+  if (isMoving)
+  {
+    servo1.write(currentAngles[0]); // Root (Pin 2)
+    servo2.write(currentAngles[1]); // Arm A1 (Pin 3)
+    servo3.write(currentAngles[2]); // Arm A2 (Pin 4) - already calculated as opposite in Python
+    servo4.write(currentAngles[3]); // Arm B (Pin 5)
+    servo5.write(currentAngles[4]); // Wrist A (Pin 6)
+    servo6.write(currentAngles[5]); // Wrist B (Pin 7)
+    servo7.write(currentAngles[6]); // Gripper (Pin 8)
+    
+    // Add delay between steps for smooth movement
+    delay(STEP_DELAY);
+  }
+  else
+  {
+    // Small delay when idle to prevent loop from running too fast
+    delay(1);
   }
 }

@@ -41,12 +41,81 @@ Then open `http://localhost:5001` and connect the Arduino.
 
 **Note**: Arm A1 (Pin 3) and Arm A2 (Pin 4) are coupled and rotate in opposite directions. When A1 moves to X°, A2 automatically moves to (180-X)°.
 
-## Presets
+## Movement Interpolation ✨
 
-- **Home**: Initial position (servo 0-5 at 90°, gripper at 35°)
-- **Rest**: Rest position
-- **Reach**: Arm extended forward
-- **Grab**: Position to grab objects
+**NEW in v1.1.0**: Hardware interpolation for smooth, vibration-free movements!
+
+```
+Without Interpolation:     With Interpolation:
+Position A → Position B    Position A → → → → → Position B
+     ⚡ JUMP!                    🌊 SMOOTH FLOW
+```
+
+Instead of jumping directly to target positions, servos move gradually in small steps:
+
+| Feature | Benefit |
+|---------|---------|
+| 🎯 **Reduced Vibrations** | Gradual movements reduce mechanical stress |
+| 🌊 **Smooth Motion** | Natural, fluid transitions between positions |
+| 📐 **Better Precision** | More controlled positioning |
+| ⚙️ **Less Wear** | Extended servo and mechanical lifespan |
+| 🎛️ **Configurable** | Adjust speed vs smoothness trade-off |
+
+### Quick Start
+
+1. **Upload the updated firmware** to Arduino
+2. **Start the server**: `python3 robot_arm_server.py`
+3. **Test interpolation**: `python3 test_interpolation.py`
+
+### Configuration
+
+Adjust interpolation in `RoboArm_Studio.ino`:
+
+```cpp
+const int INTERPOLATION_STEP = 1;  // Degrees per step (1-3 recommended)
+const int STEP_DELAY = 15;         // Milliseconds between steps (10-30 recommended)
+```
+
+**Movement Time Calculation:**
+```
+Time (seconds) = (Angle Difference / INTERPOLATION_STEP) × STEP_DELAY / 1000
+
+Example: 90° movement with default settings
+Time = (90 / 1) × 15 / 1000 = 1.35 seconds
+```
+
+### Presets
+
+| Preset | Speed | Smoothness | Use Case |
+|--------|-------|------------|----------|
+| **Ultra-Smooth** | STEP=1, DELAY=20 | ⭐⭐⭐⭐⭐ | Video recording, demos |
+| **Balanced** (default) | STEP=1, DELAY=15 | ⭐⭐⭐⭐ | General use |
+| **Fast** | STEP=2, DELAY=10 | ⭐⭐⭐ | Quick operations |
+| **Heavy Load** | STEP=1, DELAY=25 | ⭐⭐⭐⭐⭐ | Carrying heavy objects |
+
+📖 **See [INTERPOLATION_GUIDE.md](INTERPOLATION_GUIDE.md) for detailed configuration and tuning.**
+
+## Positions Management 💾
+
+### Built-in Presets
+
+| Preset | Description | Angles |
+|--------|-------------|--------|
+| **Home** | Initial position | [90, 90, 90, 90, 90, 90, 35] |
+| **Rest** | Rest position | [90, 30, 150, 90, 90, 90, 0] |
+| **Reach** | Arm extended forward | [90, 120, 60, 60, 90, 90, 35] |
+| **Grab** | Position to grab objects | [90, 90, 90, 90, 90, 90, 70] |
+
+### Custom Positions
+
+Save and load your own positions directly from the web interface:
+
+1. **Position the arm** using sliders
+2. **Click "Save Position"** and give it a name
+3. **Load anytime** from the saved positions list
+4. **Delete** positions you no longer need
+
+Positions are automatically saved to `saved_positions.json` and persist between sessions.
 
 ## Network Access
 

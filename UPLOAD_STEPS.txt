@@ -1,0 +1,120 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║          🔧 CARICA FIRMWARE ARDUINO - GUIDA RAPIDA                   ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+⚠️  IL PROBLEMA: Il firmware modificato NON è ancora su Arduino!
+    Il file .ino è stato modificato sul computer, ma Arduino ha ancora
+    il vecchio firmware. Devi caricarlo!
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  PASSO 1: DISCONNETTI DAL SERVER WEB                                ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+  1. Apri browser: http://localhost:5001
+  2. Click: "Disconnect Arduino"
+  3. Attendi conferma disconnessione
+  
+  ⚠️ IMPORTANTE: Se non disconnetti, Arduino IDE non può accedere
+     alla porta seriale!
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  PASSO 2: APRI ARDUINO IDE                                          ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+  1. Apri applicazione "Arduino IDE"
+  2. File → Open
+  3. Naviga a: /Users/marcodisanto/Documents/projects/RoboArm-Studio/
+  4. Seleziona: RoboArm_Studio.ino
+  5. Click "Open"
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  PASSO 3: CONFIGURA ARDUINO IDE                                     ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+  1. Tools → Board → Arduino AVR Boards → Arduino Uno
+     (o "Arduino Uno R4" se hai R4)
+  
+  2. Tools → Port → Seleziona porta USB
+     (es. /dev/cu.usbmodem14101)
+     
+     ⚠️ Se non vedi porte:
+        - Verifica cavo USB collegato
+        - Scollega e ricollega USB
+        - Riavvia Arduino IDE
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  PASSO 4: COMPILA E CARICA                                          ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+  1. Click pulsante "Verify" (✓)
+     → Attendi: "Done compiling"
+     → Verifica nessun errore
+  
+  2. Click pulsante "Upload" (→)
+     → Attendi: "Uploading..."
+     → Attendi: "Done uploading"
+  
+  ⏱️  Tempo: 10-30 secondi
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  PASSO 5: RICONNETTI DAL SERVER WEB                                 ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+  1. Torna al browser: http://localhost:5001
+  2. Click: "Connect Arduino"
+  3. Attendi: "✅ Connesso!"
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  PASSO 6: TESTA IL MOVIMENTO                                        ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+  1. Muovi slider "Root" da 90° a 0°
+  2. Osserva il servo fisicamente
+  3. Dovrebbe muoversi GRADUALMENTE e COMPLETAMENTE!
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ RISULTATO ATTESO:
+   ✨ Movimenti fluidi e graduali
+   🎯 Servo raggiunge posizione target
+   🔇 Nessun jitter quando fermo
+   ⏱️  Tempo movimento 90°: ~1.35 secondi
+
+═══════════════════════════════════════════════════════════════════════
+
+🆘 PROBLEMI COMUNI:
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Errore: "Port already in use"                                    │
+├───────────────────────────────────────────────────────────────────┤
+│ → Disconnetti dall'interfaccia web                               │
+│ → Se non funziona, ferma server Python (Ctrl+C)                  │
+└───────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Errore: "Board not found"                                        │
+├───────────────────────────────────────────────────────────────────┤
+│ → Verifica cavo USB collegato                                    │
+│ → Tools → Port → Seleziona porta corretta                        │
+│ → Scollega/ricollega USB                                         │
+└───────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Servo ancora fermi dopo caricamento                              │
+├───────────────────────────────────────────────────────────────────┤
+│ → Verifica "Done uploading" in Arduino IDE                       │
+│ → Riavvia Arduino (scollega/ricollega USB)                       │
+│ → Verifica alimentazione esterna servo                           │
+│ → Controlla connessioni fisiche                                  │
+└───────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTAZIONE COMPLETA:
+   - UPLOAD_FIRMWARE_GUIDE.md (dettagli completi)
+   - QUICK_FIX_GUIDE.md (guida generale)
+   - INTERPOLATION_FIX.md (spiegazione tecnica)
+
+═══════════════════════════════════════════════════════════════════════
+
+

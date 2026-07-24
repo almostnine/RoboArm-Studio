@@ -10,14 +10,41 @@ import serial
 import serial.tools.list_ports
 import threading
 import time
+import json
+import os
 
 app = Flask(__name__)
 
 # Variabili globali
 arduino = None
-current_angles = [90, 90, 90, 90, 90, 35]  # Posizione iniziale (servo 0-4 a 90°, gripper a 35°)
+current_angles = [90, 90, 90, 90, 90, 90, 35]  # Posizione iniziale (servo 0-6 a 90°, gripper a 35°)
 is_connected = False
 arduino_lock = threading.Lock()
+
+# File per salvare le posizioni
+POSITIONS_FILE = 'saved_positions.json'
+
+# Carica posizioni salvate
+def load_positions():
+    """Carica le posizioni salvate dal file"""
+    if os.path.exists(POSITIONS_FILE):
+        try:
+            with open(POSITIONS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_positions(positions):
+    """Salva le posizioni nel file"""
+    try:
+        with open(POSITIONS_FILE, 'w') as f:
+            json.dump(positions, f, indent=2)
+        return True
+    except:
+        return False
+
+saved_positions = load_positions()
 
 def find_arduino_port():
     """Trova automaticamente la porta dell'Arduino"""
@@ -54,7 +81,7 @@ def connect_arduino(port=None):
         return False
 
 def send_angles(angles):
-    """Invia gli angoli all'Arduino"""
+    """Invia gli angoli all'Arduino con interpolazione hardware"""
     global arduino, is_connected
     
     if not is_connected or arduino is None:
@@ -64,21 +91,20 @@ def send_angles(angles):
         with arduino_lock:
             # Assicuriamoci che tutti gli angoli siano interi e nel range corretto
             angles_int = [int(round(a)) for a in angles]
-            # Verifica range: servo 0-4 hanno range 0-180, gripper (servo 5) ha range 0-70
+            # Verifica range: servo 0-5 hanno range 0-180, gripper (servo 6) ha range 0-70
             for i in range(len(angles_int)):
-                if i == 5:  # Gripper
+                if i == 6:  # Gripper
                     angles_int[i] = max(0, min(70, angles_int[i]))
                 else:  # Altri servo
                     angles_int[i] = max(0, min(180, angles_int[i]))
             
-            # Formatta il comando: 6 numeri interi separati da spazi
+            # Formatta il comando: 7 numeri interi separati da spazi
             command = ' '.join(map(str, angles_int)) + '\n'
             
             # Debug: stampa il comando completo inviato con mappatura pin
-            pinMapping = ['Pin 3', 'Pin 4', 'Pin 6', 'Pin 9', 'Pin 10', 'Pin 11']
-            print(f"[DEBUG] Comando completo inviato: {command.strip()}")
-            print(f"[DEBUG] Mappatura: Servo 0-5 → {pinMapping}")
-            print(f"[DEBUG] Valore Pin 9 (Servo 3): {angles_int[3]}°")
+            pinMapping = ['Pin 2 (Root)', 'Pin 3 (Arm A1)', 'Pin 4 (Arm A2)', 'Pin 5 (Arm B)', 'Pin 6 (Wrist A)', 'Pin 7 (Wrist B)', 'Pin 8 (Gripper)']
+            print(f"[INTERPOLATION] Comando inviato: {command.strip()}")
+            print(f"[INTERPOLATION] Mappatura: {' | '.join([f'{pinMapping[i]}: {angles_int[i]}°' for i in range(len(angles_int))])}")
             
             arduino.write(command.encode())
             arduino.flush()
@@ -136,7 +162,7 @@ def api_status():
 
 @app.route('/api/move', methods=['POST'])
 def api_move():
-    """Muove i servo"""
+    """Muove i servo con interpolazione hardware"""
     global current_angles
     
     if not is_connected:
@@ -150,21 +176,32 @@ def api_move():
         # Converti angle in intero e assicurati che sia nel range corretto
         angle = int(round(float(angle)))
         
-        # Validazione: servo 0-4 hanno range 0-180, gripper (servo 5) ha range 0-70
-        if servo_id == 5:
+        # Validazione: servo 0-5 hanno range 0-180, gripper (servo 6) ha range 0-70
+        if servo_id == 6:
             angle = max(0, min(70, angle))  # Clamp tra 0 e 70 per gripper
         else:
             angle = max(0, min(180, angle))  # Clamp tra 0 e 180 per altri servo
         
         # Aggiorna l'angolo del servo specifico
-        if 0 <= servo_id < 6:
-            servoNames = ['Root (Pin 3)', 'Arm A1 (Pin 4)', 'Arm B (Pin 6)', 'Wrist A (Pin 9)', 'Wrist B (Pin 10)', 'Gripper (Pin 11)']
-            print(f"[DEBUG] Movimento servo {servo_id} ({servoNames[servo_id]}) a {angle}°")
-            current_angles[servo_id] = angle
-            print(f"[DEBUG] Angoli attuali prima invio: {current_angles}")
+        if 0 <= servo_id < 7:
+            servoNames = ['Root (Pin 2)', 'Arm A1 (Pin 3)', 'Arm A2 (Pin 4)', 'Arm B (Pin 5)', 'Wrist A (Pin 6)', 'Wrist B (Pin 7)', 'Gripper (Pin 8)']
+            print(f"[INTERPOLATION] Movimento servo {servo_id} ({servoNames[servo_id]}) a {angle}°")
+            
+            # Se muoviamo servo 1 (Pin 3), aggiorna anche servo 2 (Pin 4) in direzione opposta
+            if servo_id == 1:
+                current_angles[1] = angle
+                current_angles[2] = 180 - angle
+                print(f"[INTERPOLATION] Accoppiamento servo 1-2: Servo 1={angle}°, Servo 2={180-angle}°")
+            # Se muoviamo servo 2 (Pin 4), aggiorna anche servo 1 (Pin 3) in direzione opposta
+            elif servo_id == 2:
+                current_angles[2] = angle
+                current_angles[1] = 180 - angle
+                print(f"[INTERPOLATION] Accoppiamento servo 1-2: Servo 1={180-angle}°, Servo 2={angle}°")
+            else:
+                current_angles[servo_id] = angle
+            
+            print(f"[INTERPOLATION] Angoli target: {current_angles}")
             success = send_angles(current_angles)
-            if servo_id == 3:  # Pin 9 - Wrist A
-                print(f"[DEBUG] ⚠️ ATTENZIONE: Comando inviato per Pin 9 (Servo 3) = {angle}°")
             return jsonify({
                 'success': success,
                 'angles': current_angles
@@ -174,7 +211,7 @@ def api_move():
 
 @app.route('/api/set_all', methods=['POST'])
 def api_set_all():
-    """Imposta tutti i servo contemporaneamente"""
+    """Imposta tutti i servo contemporaneamente con interpolazione"""
     global current_angles
     
     if not is_connected:
@@ -183,18 +220,19 @@ def api_set_all():
     data = request.json
     angles = data.get('angles')
     
-    if angles and len(angles) == 6:
+    if angles and len(angles) == 7:
         # Verifica che tutti gli angoli siano validi
-        # Validazione: servo 0-4 hanno range 0-180, gripper (servo 5) ha range 0-70
+        # Validazione: servo 0-5 hanno range 0-180, gripper (servo 6) ha range 0-70
         angles_validated = []
         for i, a in enumerate(angles):
-            if i == 5:  # Gripper
+            if i == 6:  # Gripper
                 angles_validated.append(max(0, min(70, int(round(float(a))))))
             else:  # Altri servo
                 angles_validated.append(max(0, min(180, int(round(float(a))))))
         
-        if all(0 <= a <= 180 for a in angles_validated[:5]) and 0 <= angles_validated[5] <= 70:
+        if all(0 <= a <= 180 for a in angles_validated[:6]) and 0 <= angles_validated[6] <= 70:
             current_angles = angles_validated
+            print(f"[INTERPOLATION] Impostazione tutti i servo: {current_angles}")
             success = send_angles(current_angles)
             return jsonify({
                 'success': success,
@@ -205,18 +243,19 @@ def api_set_all():
 
 @app.route('/api/preset/<preset_name>', methods=['POST'])
 def api_preset(preset_name):
-    """Carica posizioni predefinite"""
+    """Carica posizioni predefinite con interpolazione"""
     global current_angles
     
     presets = {
-        'home': [90, 90, 90, 90, 90, 35],  # Posizione iniziale (servo 0-4 a 90°, gripper a 35°)
-        'rest': [90, 30, 30, 90, 90, 0],  # Posizione di riposo (gripper aperto a 0°)
-        'reach': [90, 120, 120, 60, 90, 35],  # Posizione di estensione (gripper semi-aperto)
-        'grab': [90, 90, 90, 90, 90, 70]  # Posizione per afferrare (gripper chiuso a 70°)
+        'home': [90, 90, 90, 90, 90, 90, 35],  # Posizione iniziale (servo 0-5 a 90°, gripper a 35°)
+        'rest': [90, 30, 150, 90, 90, 90, 0],  # Posizione di riposo (gripper aperto a 0°)
+        'reach': [90, 120, 60, 60, 90, 90, 35],  # Posizione di estensione (gripper semi-aperto)
+        'grab': [90, 90, 90, 90, 90, 90, 70]  # Posizione per afferrare (gripper chiuso a 70°)
     }
     
     if preset_name in presets:
         current_angles = presets[preset_name]
+        print(f"[INTERPOLATION] Caricamento preset '{preset_name}': {current_angles}")
         success = send_angles(current_angles)
         return jsonify({
             'success': success,
@@ -225,6 +264,100 @@ def api_preset(preset_name):
         })
     
     return jsonify({'success': False, 'message': 'Preset non trovato'})
+
+@app.route('/api/positions', methods=['GET'])
+def api_get_positions():
+    """Ottiene tutte le posizioni salvate"""
+    return jsonify({
+        'success': True,
+        'positions': saved_positions
+    })
+
+@app.route('/api/positions', methods=['POST'])
+def api_save_position():
+    """Salva una nuova posizione"""
+    global saved_positions
+    
+    data = request.json
+    name = data.get('name')
+    angles = data.get('angles')
+    
+    if not name or not angles or len(angles) != 7:
+        return jsonify({'success': False, 'message': 'Dati non validi'})
+    
+    # Salva la posizione
+    saved_positions[name] = {
+        'angles': angles,
+        'timestamp': time.time()
+    }
+    
+    # Salva su file
+    if save_positions(saved_positions):
+        print(f"[POSITIONS] Posizione '{name}' salvata: {angles}")
+        return jsonify({
+            'success': True,
+            'positions': saved_positions
+        })
+    else:
+        return jsonify({'success': False, 'message': 'Errore salvataggio file'})
+
+@app.route('/api/positions/<position_name>', methods=['POST'])
+def api_load_position(position_name):
+    """Carica una posizione salvata con interpolazione"""
+    global current_angles
+    
+    if not is_connected:
+        return jsonify({'success': False, 'message': 'Arduino non connesso'})
+    
+    if position_name not in saved_positions:
+        return jsonify({'success': False, 'message': 'Posizione non trovata'})
+    
+    angles = saved_positions[position_name]['angles']
+    current_angles = angles
+    print(f"[INTERPOLATION] Caricamento posizione '{position_name}': {angles}")
+    success = send_angles(current_angles)
+    
+    return jsonify({
+        'success': success,
+        'angles': current_angles
+    })
+
+@app.route('/api/positions/<position_name>', methods=['DELETE'])
+def api_delete_position(position_name):
+    """Elimina una posizione salvata"""
+    global saved_positions
+    
+    if position_name not in saved_positions:
+        return jsonify({'success': False, 'message': 'Posizione non trovata'})
+    
+    del saved_positions[position_name]
+    
+    if save_positions(saved_positions):
+        print(f"[POSITIONS] Posizione '{position_name}' eliminata")
+        return jsonify({
+            'success': True,
+            'positions': saved_positions
+        })
+    else:
+        return jsonify({'success': False, 'message': 'Errore salvataggio file'})
+
+@app.route('/api/set_current', methods=['POST'])
+def api_set_current():
+    """Imposta la posizione corrente senza muovere i servo (per allineamento manuale)"""
+    global current_angles
+    
+    data = request.json
+    angles = data.get('angles')
+    
+    if angles and len(angles) == 7:
+        current_angles = angles
+        print(f"[POSITIONS] Posizione corrente allineata: {current_angles}")
+        return jsonify({
+            'success': True,
+            'angles': current_angles
+        })
+    
+    return jsonify({'success': False, 'message': 'Angoli non validi'})
 
 if __name__ == '__main__':
     print("=" * 50)
